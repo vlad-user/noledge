@@ -1,0 +1,361 @@
+\documentclass[../../main.tex]{subfiles}
+\usepackage[utf8]{inputenc}
+\usepackage{enumitem}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{tabularx}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{mdframed}
+
+\usepackage{multirow,array}
+\usepackage[table]{xcolor}
+\numberwithin{equation}{section}
+
+%\title{summaries}
+%\author{vladpush }
+%\date{June 2019}
+
+\begin{document}
+
+%\maketitle
+%\small
+\section{ML basics}
+In supervised ML problem we have unknown target distribution $p(y|x)$ which also could be denoted by $y=f(x) + \mathcal{N}$. This is a generalized case because the function that we may want to learn may not be deterministic. The $y$ is not uniquely determined by $x$, but rather $y$ is affected by $x$: $y\sim p(y|x)$. For example, two identical data points may lead to different outcomes (rating movies depending on the mood).
+
+Unknown distribution $p(x)$, together with $p(y|x)$, generate training samples $$(x_1, y_1), ..., (x_N, y_N) \sim p(x, y)=p(x)p(y|x)$$
+
+The distribution on $x$ is introduced in order to use Hoeffding's inequality. If $y=f(x)$ were deterministic we would have only $x$ generated from $p(x)$ and $y$ were computed deterministically.
+The expected error in case of joint distribution $p(x, y)$ is $E_{out}=\mathbb{E}_{x, y}[e(h(x), y)]$.
+
+\subsection{Training vs Testing}
+Mathematically, the testing is
+\begin{align}
+    P(|E_{in} - E_{out}|>\epsilon) \leq 2 exp(-2\epsilon^2N)
+\end{align}
+$E_{in}$ is the $\textbf{testing error}$ and $E_{out}$ is the expected $\textbf{real error}$ which we cannot observe. 
+
+The training is
+\begin{align}
+    P(|E_{in} - E_{out}|>\epsilon) \leq 2 M\cdot exp(-2\epsilon^2N)
+\end{align}\label{eqn:hoeffding-training}
+where $M$ is the size of the set of hypotheses. During testing we need to bound the $P(|E_{in} - E_{out}|>\epsilon)$ by only one hypothesis, while in training we take the upper union bound in the worst case.
+
+%%%%%%%%%%%%%%%%%%5
+Suppose that with probability at least $1-\delta$, $|E_{in}-E_{out}|\leq \epsilon$, which implies $E_{in}-\epsilon \leq E_{out}\leq E_{in}+\epsilon$. Since the $\delta$ is known, $\epsilon=\sqrt{\frac{1}{2N}log\frac{2M}{\delta}}$ and we have 
+
+\begin{align}
+    E_{out}\leq E_{in}+\sqrt{\frac{1}{2N}log\frac{2M}{\delta}}
+\end{align}\label{eqn:generalization-bound}
+
+The equation \ref{eqn:generalization-bound} could be referred to as a generalization bound because it bounds $E_{out}$ in terms of $E_{in}$. Notice that $E_{in}-\epsilon\leq E_{out}$ holds as well, $\forall h\in H$. This is important for learning, but in a more subtle way. Not only do we want to know that the hypothesis that we are bounding will continue to do well out of sample (i.e. $E_{out}\leq E_{in} + \epsilon$, but we also want to be sure that we did the best we could with our $H$ (no other hypothesis $h\in H$ has $E_{out}$ significantly better than $E_{out}$ that we have. $E_{in}-\epsilon\leq E_{out}$ assures us that we couldn't do much better because   
+%%%%%%%%%%%%%%%%%%%
+Suppose that there are bad event $B_m$ such that $|E_{in}(h_m)-E_{out}(h_m)|>\epsilon$. The union bound of all bad events is just $p(B_1 \ or\  B_2 \ or\  ... \ or\  B_M)$. We want the probability of any bad event to be small, meaning that for any hypothesis we pick we expect to have good generalization. The statement of the union bound should be made regardless of a correlations between the event, regardless if they depend on each other or not. The following always holds
+\begin{align}
+    p(B_1 \ or\  B_2 \ or\  ... \ or\  B_M)\leq \sum \limits_{i=1}^Mp(B_i)
+\end{align}
+The above bound is very poor, since it disregards overlaps between probabilities of events (overlaps in terms of Venn diagram of events). The goal here is to find the overlaps between bad event. In practice, there are very overlapping. For example, if we were to consider perceptron model that may classify with certain error moving the perceptron $H$ a little bit wouldn't change the error.
+
+Supposed that $\Delta E_{out}$ and $\Delta E_{in}$ is the changes in errors when we move from one hypothesis to another (e.g. moving the hyperplane in case of perceptron). We would like to make a statement 
+$$ |E_{in}(h_1)-E_{out}(h_1)|\approx |E_{in}(h_2)-E_{out}(h_2)| $$
+If it holds we show that these are overlapping events, since if one generalization is exceeds $\epsilon$ it is likely that the other does too. 
+
+When we count the number of hypotheses we count the whole input space. Two hypotheses are different if they predict differently on at least one point from input space. In case of perceptron the input space is continuous and therefore, we get an infinite number of hypotheses. Instead of considering an infinite set of points, let us consider a finite set. For a given set of $N$ point we can ask: \textit{How many label assignment are there for this set of $N$ points?}. It is clearly bounded by $2^N$ in case of binary classification problem. It is also relates to the strength of the model: some powerful models may achieve this $2^N$ bound and some, less powerful, my not because of particular constellation of points geometrically doesn't allow this. The number of assignment of labels for a particular constellation of point is called the number of \textbf{dichotomies}. More formally, if the hypothesis is $h:X\rightarrow \{ -1, 1 \}$, a dichotomy is $h: \{ x_1, x_2, ..., x_N \}\rightarrow \{ -1, 1 \}^N$. If number of hypotheses could be infinite $H=\infty$, number of dichotomies $|H(x_1, ..., x_n)|\leq 2^N$.
+
+
+\subsubsection{Growth function}
+The \textbf{growth function} counts the most dichotomies on any $N$ points. Formally,
+\begin{align}
+    m_H(N) = \underset{x_1, ..., x_N\in X}{max}|H(x_1, ..., x_N)|
+\end{align}
+Clearly, $m_H(N)\leq 2^N$. Note that the constellation of points can be chosen in anyway that maximizes the number of dichotomies. 
+
+\subsubsection*{Examples of growth functions}
+\begin{itemize}
+    \item Perceptron: For $N=3$ point that form a triangle there are $8$ hypotheses. If the points are col-linear, there's no such possibility, but since we are taking the maximum, the answer is $8$. For $N=4$ (XOR problem) $m_H(4)=14$. 
+    \item Positive rays: $h(x)=sign(x-a)$, where $a$ is a trainable parameter. $m_H(N)=N+1$.
+    \item Positive intervals: $m_H(N)={N+1 \choose 2} + 1=\frac{1}{2}N^2+\frac{1}{2}N+1$.
+    \item Convex set: $m_H(N)=2^N$.
+\end{itemize}
+When $m_H(N)=2^N$ we say that the $N$ points are \textbf{shattered} by the set of hypothesis.
+
+The Hoeffding's inequality can be rewritten as
+\begin{align}
+    P(|E_{in}-E_{out}|>\epsilon)\leq 2m_H(N)e^{-2\epsilon^2 N}
+\end{align}
+If we can show that $m_H(N)$ is a polynomial we can declare that the learning is feasible using particular hypotheses set $H$.
+\subsubsection{Break point}
+\textit{If no data set of size $k$ can be shattered by $H$, then $k$ is a \textbf{break point} for $H$}.
+The immediate consequence is that if $k$ is a break point for $H$, then for every $n>k$, $n$ is also a break point for $H$.
+For perceptron the break point is $4$. For positive rays it is $2$. For positive intervals it is $3$. For convex sets it is $\infty$.
+
+Main result is that if there is a break point, then the growth function is polynomial in $N$. The existence of break point impose an enormous combinatorial restriction. For instance, if there are 100 points and perceptron model, there are no three data points out of 100 that could be shattered. This restriction results in loosing possible dichotomies in droves and collapses the growth function to polynomial.
+\subsubsection*{Example}
+Given the constraint on $H$ is break point $2$, how many dichotomies are there on three data points?
+\begin{center}
+\begin{tabular}{| c | c | c | }
+ \hline
+ $x_1$ & $x_2$ & $x_3$  \\ \hline 
+ 0 & 0 & 0 \\ \hline
+ 0 & 0 & 1 \\ \hline
+ 0 & 1 & 0 \\ \hline
+ 1 & 0 & 0 \\ \hline
+\end{tabular}
+\end{center}
+\textcolor{red}{If we replace ones with zeros in the table above, why it doesn't as a different assignments? (Meaning that we have ones instead of zeros in the first column).}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Theory of Generalization}
+We have following propositions to prove:
+\begin{enumerate}
+    \item $m_H(N)$ is bounded by a polynomial
+    \item $m_H(N)$ can be a substitution to the size of the hypotheses set.
+\end{enumerate}
+\textbf{Proof 1}\\
+Let us now count the number dichotomies. This is equivalent to counting the number of ways to order $N$ objects of two types $0, 1$. There are $0\leq j\leq K-1$ objects of type $0$ and $N-j$ objects of type $1$. Hence, we have 
+\begin{align*}
+    m_H(N)\leq \sum\limits_{j=0}^{K-1}{N\choose j}    
+\end{align*}
+Since the summation $\sum\limits_{j=0}^{K-1}{N\choose j}$ has at most power of $N^{K-1}$ the proof follows.
+\textbf{Proof 2}\\
+
+Now we show that $m_H(N)$ can replace the size of the hypotheses set. Instead of 
+\begin{align*}
+    P(|E_{in}-E_{out}>\epsilon|)\leq 2Me^{-2\epsilon^2N}
+\end{align*}
+we want 
+\begin{align*}
+    P(|E_{in}-E_{out}>\epsilon|)\leq 2m_H(N)e^{-2\epsilon^2N}
+\end{align*}
+...
+
+\textbf{Examples}\\
+
+\begin{itemize}
+    \item $H$ is positive rays with $k=2$, then $m_H(N)=N+1\leq N+1$.
+    \item $H$ is positive intervals with $k=3$, then $m_H(N)=\frac{1}{2}N^2+\frac{1}{2}N+1\leq\frac{1}{2}N^2+\frac{1}{2}N+1$
+    \item $H$ is a 2D perceptron with $k=4$, then $m_H(N)=?\leq \frac{1}{6}N^3+\frac{5}{6}N+1$
+\end{itemize}
+\begin{table}[ht]
+  \large  
+  \centering 
+  \renewcommand{\arraystretch}{1.}
+  \begin{tabular}{c|c||*{10}{c|}}
+    \multicolumn{2}{c}{} & \multicolumn{7}{@{}c}{$\overbrace{\rule{12.5em}{0pt}}^{K}$} \\
+\cline{2-9}
+&& \bfseries 1 & \bfseries 2 & \bfseries 3 & \bfseries 4 & \bfseries 5 &\bfseries 5 & \bfseries 7   \\
+
+\cline{2-9}
+\multirow{5}*{\rotatebox{90}{$\overbrace{\rule{12.5em}{0pt}}^{N}$}}
+&    \bfseries 1  & \textcolor{green}{1}   & \textcolor{blue}{2}   & \textcolor{blue}{2}   & \textcolor{blue}{2}   & \textcolor{blue}{2}   & \textcolor{blue}{2}   & \textcolor{blue}{2}\\
+
+    \cline{2-9}
+&    \bfseries 2  & \textcolor{gray}{1}   & \textcolor{green}{3}   & \textcolor{red}{4}   & \textcolor{red}{4}   & \textcolor{red}{4}   & \textcolor{red}{4}   & \textcolor{red}{4}\\ 
+
+    \cline{2-9}
+&    \bfseries 3  & \textcolor{gray}{1}   & 0   & \textcolor{green}{7}   & \textcolor{red}{8}   & \textcolor{red}{8}   & \textcolor{red}{8}   & \textcolor{red}{8}\\ 
+
+    \cline{2-9}
+&    \bfseries 4  & \textcolor{gray}{1}   & 0   & 0   & \textcolor{green}{15}   & \textcolor{red}{16}   & \textcolor{red}{16}   & \textcolor{red}{16}\\ 
+
+    \cline{2-9}
+&    \bfseries 5  & \textcolor{gray}{1}   & 0   & 0   & 0   & \textcolor{green}{31}   & \textcolor{red}{32}   & \textcolor{red}{32} \\
+
+    \cline{2-9}
+&    \bfseries 6  & \textcolor{gray}{1}   & 0   & 0   & 0   & 0    & \textcolor{green}{63}  & \textcolor{red}{64}\\
+
+    \cline{2-9}
+&    \bfseries 7  & \textcolor{gray}{1}   & 0   & 0   & 0   & 0   & 0    & \textcolor{green}{127}\\
+
+    \cline{2-9}
+&    \bfseries 8  & \textcolor{gray}{1}   & 0   & 0   & 0   & 0   & 0   & 0\\
+
+    \cline{2-9}
+&    \bfseries 9  & \textcolor{gray}{1}   & 0   & 0   & 0   & 0   & 0   & 0\\
+
+    \cline{2-9}
+&    \bfseries 10 & \textcolor{gray}{1}   & 0   & 0   & 0   & 0   & 0   & 0\\
+
+    \cline{2-9}
+  \end{tabular}
+  \caption{$B(N, K)$}
+\end{table} 
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Keeping Neural Networks Simple by Minimizing
+the Description Length of the Weights}
+We want to minimize the combined cost of describing the model and describing the misfit between the model and the data
+\begin{align}
+    L(D)=min\{ L(H) + L(D|H) \}
+\end{align}
+For supervised NNs with a predetermined architecture, the model cost is the number of bits it takes to describe the weights, and the data-misfit cost is the number of bits it takes to describe the discrepancy between the correct output and the output of the NN on each training case.
+\subsection{Coding the data misfits}
+We assume that the misfits are quantized, using intervals of fixed width $t$, and are encoded separately for each of the output units. We assume that for the output unit $j$ the data misfits are encoded by $\mathcal{N}(0, \sigma_j^2)$ and $\sigma_j>>t$. $d_j^c$ is the desired output, and $y_j^c$ is the actual one. The approximated probability is therefore
+\begin{align}
+    p(d_j^c-y_j^c)=t\frac{1}{\sqrt{2\pi}\sigma_j}exp(\frac{-(d_j^c-y_j^c)^2}{2\sigma_j^2})
+\end{align}
+ Assuming a single output unit we want to minimize the description length summed over all $N$ training cases
+\begin{align}
+    N[-logt + log(\sqrt{2\pi}) + log(\sigma)]+\frac{1}{\sigma^2}\sum\limits_{i=1}^N (d^i-y^i)^2
+\end{align}\label{eqn:misfits-raw-bit}
+
+Computing the derivative with respect to $\sigma$ yields following optimal value 
+\begin{align}
+    \sigma = \sqrt{\frac{1}{N}\sum\limits_{i=1}^N (d^i-y^j)^2}
+\end{align}\label{eqn:misfit-optimial-std}
+Which exactly the empirical standard deviation. Substituting \ref{eqn:misfit-optimial-std} into \ref{eqn:misfits-raw-bit} results in 
+\begin{align}
+    C_{misfit}&=N[-logt + log(\sqrt{2\pi})+\frac{1}{2}] + \frac{N}{2}log(\frac{1}{N}\sum\limits_{i=1}^N (d^i-y^i)^2)\\
+    &=kN+\frac{N}{2}log(\frac{1}{N}\sum\limits_{i=1}^N (d^i-y^i)^2)
+\end{align}
+
+\subsection{Coding the weights}
+We assume that the weights of the network are finely quantized and come from $\mathcal{N}(0, \sigma_w)$ where $\sigma_w$ is \textbf{fixed} in advanced. Since $\sigma_w$ is fixed in advance, the description length of the weights is proportional to the sum of their squares. We can minimize the total description length of the data misfits and the weights by minimizing the sum of two terms
+\begin{align}
+    C=\sum\limits_j\frac{1}{2\sigma_j^2}\sum\limits_c (d_j^c-y_j^c)^2 + \frac{1}{\sigma_w^2}\sum\limits_{ij}w_{ij}^2
+\end{align}
+where $c$ is an index over training cases. Interestingly, if both $\sigma_j, \sigma_w$ are fixed in advance, this is just the standard weight-decay method. The weight decay can therefore be viewed as a vindication of this crude MDL approach in which the standard deviations of the Gaussian's used for coding the data misfits and the weights are both fixed in advance.
+
+\subsection{The expected description length of the weights}
+Suppose that the sender and the receiver have agreed Gaussian prior distribution, $P$, for a given weight. After learning, the sender has a Gaussian posterior distribution, $Q$, for the weight. We now show that using this method the number of bits required to communicate the posterior distribution of weight is equal to the asymmetric divergence from $P$ to $Q$\footnote{In context of information theory, $D_{KL}$ measures the expected number of extra bits required to code samples from $P$ using a code optimized for $Q$, rather than the code optimized for $P$.}
+\begin{align}
+    G(P, Q)=\int Q(w)log\frac{Q(w)}{P(w)}dw
+\end{align}\label{eqn:kl-div-pq}
+To communicate a set of noisy weights, the sender averages $w$ from posterior distribution within some fine tolerance $t$. The probability of picking each possible value is determined by the posterior probability distribution for the weight. The sender then communicates these precise weights by coding them using some Gaussian prior $P$ with cost
+\begin{align}
+    C(w)=-log(t)-log(P(w))
+\end{align}
+Having sent the precise weights, the sender then communicates the data misfits achieved using those weights. Having recorded the weights and misfits, the receiver can then produce the correct outputs. He also can do something else: once he has the correct outputs he can run whaterver learning algorithm was used by the sender and recover the exact same posterior probability distribution $Q$.
+
+\section{Information Theory}
+\subsection{Entropy and the Gaussian Distribution}
+Gaussian distribution is the distribution that has highest entropy for a given variance $\sigma^2$. To show this we first define the differential entropy $\int\limits_{-\infty}^\infty f(x)logf(x)dx$ with constraints $\int\limits_{-\infty}^\infty f(x)dx=1$ and $\int\limits_{-\infty}^\infty (x-\mu)^2f(x)dx=\sigma^2$. We then maximize differential entropy with constraints constrained by Lagrange multipliers. After solving the maximisation problem we derive the entropy of the Gaussian distribution
+\begin{align}
+    h(x)=\frac{1}{2}[1 + log(2\pi\sigma^2)]
+\end{align}\label{eqn:gauss-entropy}
+\subsection{One Neuron with Noise on the Output}
+\textbf{Infomax} principle could be approximately stated as: \textit{it is the responsibility of the neurons in the output layer of a network to jointly maximise the information at the outputs about the input activations of the network. i.e. we should maximise the average mutual information between inputs $x$ and outputs $y$.} 
+
+\textbf{Mutual information} is the reduction in uncertainty of $X$ due to knowledge of Y
+\begin{align*}
+    I(X;Y)&=H(Y)-H(Y|X)\\
+          &=H(X)-H(X|Y)\\
+          &=H(X)+H(Y)-H(X, Y)
+\end{align*}
+Consider a single output neuron which is receiving the weighted sum of its inputs but whose firing is corrupted by some noise
+\begin{align}
+    y = \sum\limits_j w_jx_j + \nu
+\end{align}
+Let us assume that the output of the neuron, $y$, is a Gaussian random variable with variance $\sigma_y^2$. Similarly, the noise is also zero mean Guassian with variance $\sigma_{\nu}$ and the noise is not correlated with any of the inputs.
+The mutual information between inputs and outputs is given by
+\begin{align}
+    I(x; y)=h(y)-h(y|x)
+\end{align}
+Which is simply stating that the information in the output about the inputs is the expected information in the output minus the entropy in the output when we know the inputs. The last term is due to noise since the neuron is otherwise deterministic
+\begin{align}
+    I(x;y) = h(y)-h(\nu)
+\end{align}
+
+From (\ref{eqn:gauss-entropy}) we know can derive
+\begin{align*}
+    h(y)=\frac{1}{2}[1+log(2\pi \sigma_y^2)] \\
+    h(v)=\frac{1}{2}[1+log(2\pi\sigma_{\nu}^2)]
+\end{align*}
+Then the information at the output about the inputs is given by
+\begin{align*}
+    I(x;y)&=h(y)-h(\nu)\\
+    &=\frac{1}{2}[1+log(2\pi \sigma_y^2)] - \frac{1}{2}[1+log(2\pi \sigma_{\nu}^2)]\\
+    &=\frac{1}{2}log\frac{\sigma_y^2}{\sigma_{\nu}^2}
+\end{align*}
+
+The ratio $\frac{\sigma_y^2}{\sigma_{\nu}^2}$ is the signal-to-noise ratio of the neuron. Usually we cannot do a lot about the variance of the noise and so to improve this ratio we must increase the variance of the output, i.e. to maximise the information at the output about the inputs, we must increase the variance of the outputs. We can do this by allowing the weights to grow in magnitude; since increase in the value of the weights does not affect the noise, this can be done independently of any noise effects.
+
+\subsection{Noise on the Inputs}
+Here we have
+\begin{align*}
+    y&=\sum\limits_j w_j(x_j+\nu_j)\\
+    &=\sum\limits_j w_jx_j + \sum\limits_j w_j\nu_j\\
+    &=\sum\limits_j w_jx_j + \rho
+\end{align*}
+The summed noise $\rho$ is a zero mean Gaussian  whose variance is given by
+\begin{align*}
+    \sigma_{\rho}&=\int \sum\limits_j (w_j\nu_j-0)^2f(\rho_j)d\rho_j\\
+    &=\sum\limits_jw_j^2\int\nu_j^2f(\rho_)d\rho_j\\
+    &=\sum\limits_j w_j^2\sigma_{\nu}^2
+\end{align*}
+The entropy of noise is 
+\begin{align}
+    h(\rho)=\frac{1}{2}[1 + 2\pi\sigma_{nu}^2(\sum\limits_j w_j)^2]
+\end{align}
+and the mutual information between inputs and output is given by
+\begin{align}
+    I(x;y)=\frac{1}{2}log\frac{\sigma_y^2}{\sigma_{\nu}^2(\sum\limits_j w_j)^2}
+\end{align}
+
+Again, we must assume that we have no control over the magnitude of the noise and so we must maximise $\frac{\sigma_y^2}{\sigma_{\nu}^2(\sum\limits_j w_j)^2}$. In this case it is not sufficient merely to increase the magnitude of the weights since by doing so we are also increasing the effect of the noise on the denominator. More sophisticated tactics must be employed on the neuron-by-neuron basis 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{MDL}
+According to Rissanen
+\begin{itemize}
+    \item The goal of inductive inference is to separate structure (meaningful information in the data) from noise (accidental information). The data point could be entirely regular (all ones) and noiseless, completely random (tossing a coin), or contain accidental information (data point has exactly 10 ones and all other). zeros). In the latter, structural information is that the signal contains exactly 10 ones; given this regularity, the description of exactly which of all possible sequences occurs, is the accidental information.
+    \item In traditional theory one typically assumes that some $P^*\in \mathcal{H}$ generates the data, and then noise is defined as a random quantity relative to this $P^*$. In the MDL view noise is defined relative to the model $\mathcal{H}$ as the residual number of bits needed to encode the data once the model $\mathcal{H}$ is given. Thus, noise is not a random variable: it is a function only of a chosen model and the actually observed data.
+    \item When two models fit the data equally well, MDL will choose the one that is the simplest in the sense of the shorter description length.
+\end{itemize}
+\subsection{Infinitely complex sources and under-vs-over fitting}
+
+Suppose that data are subject to $Y=g(X) + \mathcal{N}$. If we use MDL to learn a polynomial for data $D=((x_1, y_1), ..., (x_n, y_n))$, the degree of the polynomial $f^n$ selected by MDL at sample size $n$ will increase with $n$, and with high probability $f^n$ converges to $g(x)$ (e.g. $g(x)=exp(x)$). If based on a small sample we choose the best-fitting polynomial $f$ within the set of all polynomials, then, even though $f$ will fit the data very well, it is likely to be quiet unrelated to the true $g$, and $f$ may lead to disastrous predictions of future data. The reason is that, for small samples, the set of all polynomial is very large compared to the set of possible data patterns that we have observed. Therefore, any particular data pattern can only give us very limited information about which high-degree polynomial best approximates $g$. On the other hand, if we choose the best-fitting $f^0$ in some much smaller set (second-degree polynomials), the it is highly probable that prediction quality (mse) of $f^0$ on future data is about the same as its mse on the data we observed: the size (complexity) of the contemplated model is relatively small compared to the set of possible data patterns that we might have observed. Therefore, the particular pattern that we do observe gives us a lot of information on that second-degree polynomial best approximates $g$. This idea does not just appear in MDL, but is also the basis of Vapnik's Structural Risk Minimization.
+
+Overfitting (by choosing a very complex model) and there is noise in the ata, then, the best-fitting point hypothesis within the model is likely to lead to very bad future predictions on the data coming from the same source. If use choose a simple model, then the best-fitting point hypothesis within the model is likely to be almost the best predictor of the future data.
+\section{Formatlities}
+\subsection{Notations and definitions}
+\begin{itemize}
+    \item Let $X$ be a finite countable set. A code for X is a 1-to1 mapping from X to $U_{n\geq 1}\{0, 1\}^n$ is the set of binary strings of length 1 or larger.
+    \item For a given code $C$, $C(x)$ denotes the encoding of $x$.
+    \item Every code induces a function $L_C:X\rightarrow \mathbb{N}$ called a code length function. $L_C(x)$ is the number of bits needed to encode $x$ using code $C$.
+    \item We consider only lossless encoding in MDL (1-to-1 mapping). 
+    \item $P$ is defective distribution if $\sum_xP(x)<1$. It could be thought of as a probability distribution that puts some of its mass on an imagined outcome that in reality will never appear.
+    \item A probabilistic source is a sequence of probability distributions $P^1, P^2, ...$ on $X^1, X^2, ...$ such that for all $n$, $P^n and P^{n+1}$ are compatible: $P^n$ is equal to the marginal distribution of $P^{n+1}$ restricted to $n$ outcomes. That is, for all $x^n\in X^n$, $P^n(x^n)=\sum\limits_{y\in X})P^{n+1}(x^n, y)$. It can be thought of as a probability distribution on infinite sequences. The data is i.i.d. under source $P$ if for each $n$, $x^n\in X^n, P(x^n)=\prod \limits_{i=1}^{n}P(x_i)$.
+    \item A prefix code is a code such that no codeword is a prefix of any other codeword. If $X=\{a, b, c\}$, then the code $C_1$ defined by $C_1(a)=0, C_1(b)=10, C_1(c)=11$ is prefix. The code $C_2$ with $C_2(a)=0, C_2(b)=10, C_2(c)=01$, while alllowing for lossless decoding, is not a prefix code since $0$ is a prefix of $01$.
+\end{itemize}
+
+\section{Information Theory}
+\begin{itemize}
+    \item Relative entropy $D(p||q)$ is a measure of the inefficiency of assuming that the distribution is $q$ when the true distribution is $p$.
+    \begin{align}
+        D(p||q)=\sum\limits_x p(x)log(\frac{p(x)}{q(x)})
+    \end{align}
+    If we were to recognize object out of four objects with probabilities $p(0)=0.5, p(1) = 0.25, p(2) = 0.125, p(3) = 0.125$, we would first ask if a given object is $0$, then $1$ and then $2$ (or three). At most 3 bits and on average it would be $H(p)=1.75$ bits. If we were to assume different distribution $q(x)$, it would require $-H(p) - \sum \limits_x p(x)log(q(x))$ additional bits.
+    \item Mutual information of two random variables $X$ and $y$ is a measure of the amount of information that one random variable contains about another random variable due to the knowledge of the other. 
+    \begin{align}
+        I(X;Y)&=\sum\limits_{x\in X}\sum\limits_{y\in Y}p(x, y)log \frac{p(x, y)}{p(x)p(y)} \nonumber \\
+        &=E_{x, y}log \frac{p(X, Y)}{p(X)P(Y)} \nonumber \\
+        &= H(X)-H(X|Y)
+    \end{align}
+\end{itemize}
+
+\section{Paper notes}
+We assumed that if the $\beta$ is fixed, the solutions of each replica are distributed according to
+\begin{align}
+    P(W|\beta)=\frac{1}{Z}exp(-\beta \mathcal{L}(W))
+\end{align}
+
+When we train in PT setting the distribution becomes
+\begin{align}
+    P(W|\beta_i)&=P(W|\beta_i, \beta_{i-1})P(\beta_{i-1})\\
+    &+P(W|\beta_i, \beta_{i+1})P(\beta_{i+1})\nonumber \\ 
+    &+P(W|\beta_i, \beta_{i})P(\beta_{i})\nonumber
+\end{align}
+Assuming detailed balance we have
+\begin{align}
+    P(W|\beta_i^)=P(W|\beta_i, \beta_i)(1-a)+2aP(W|\beta_i, \beta_{i-1})
+\end{align}
+
+If we were to show
+\begin{align}
+    P(W|\beta)\leq P(W|\beta_i)
+\end{align}
+where $\beta$ is fixed during whole training, then it means that we would have smaller description length of weights (in terms of MDL bits).
+\end{document}
