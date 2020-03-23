@@ -1,17 +1,54 @@
-\documentclass[]{book}
-\usepackage{subfiles}
+\documentclass[draft]{book}
+\usepackage[subpreambles=false]{standalone}
+
+\usepackage[fencedCode,
+            inlineFootnotes,
+            citations,
+            definitionLists,
+            hashEnumerators,
+            smartEllipses,
+            pipeTables,
+            tableCaptions,
+            hybrid]{markdown}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[a4paper,margin=1.5cm]{geometry}
+\usepackage{fullpage}
+\usepackage[numbers]{natbib}
+\usepackage{minted}
+
+\setkeys{Gin}{width=\linewidth,totalheight=\textheight,keepaspectratio}
+
+\usepackage[utf8]{inputenc}
+\usepackage{enumitem}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{tabularx}
+\usepackage{graphicx}
+% \usepackage{xcolor}
+\usepackage{mdframed}
+
+\usepackage{multirow,array}
+\usepackage[table]{xcolor}
+\numberwithin{equation}{section}
+
+
+\usepackage{import}
 \begin{document}
 
 \tableofcontents
 
 \chapter{Latex}
-\subfile{latex/general}
 
+\import{latex/}{general}
+s
 \chapter{Machine Learning}
-\subfile{machine-learning/general/machine-learning}
-\section{Reinforcement Learning}
 
-\subsection{On-policy vs Off-policy Learning}
+\import{machine_learning/}{basics}
+
+\chapter{Reinforcement Learning}
+\import{machine_learning/}{reinforcement_learning}
+
 
 
 \end{document}
